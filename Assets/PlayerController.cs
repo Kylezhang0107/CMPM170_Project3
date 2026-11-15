@@ -14,6 +14,10 @@ public class PlayerController : MonoBehaviour
 
     public Vector2 circleCenter; //centerpoint of circle player moves around
 
+    [SerializeField] private float fireInterval = 0.25f;
+    [SerializeField] private float projectileSpeed = 10f;
+    private float nextFireTime;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -47,6 +51,33 @@ public class PlayerController : MonoBehaviour
 
         // Rotate sprite so its top points toward the center
         transform.rotation = Quaternion.Euler(0f, 0f, rotationAngle - 90f);
+
+        if (Keyboard.current != null &&
+            Keyboard.current.spaceKey.isPressed &&
+            Time.time >= nextFireTime)
+        {
+            FireProjectile(directionToCenter);
+            nextFireTime = Time.time + fireInterval;
+        }
+    }
+
+    void FireProjectile(Vector2 direction)
+    {
+        if (direction.sqrMagnitude <= Mathf.Epsilon)
+        {
+            return;
+        }
+
+        direction.Normalize();
+        GameObject projectileObject = new GameObject("Player Projectile");
+        projectileObject.transform.position = transform.position + (Vector3)(direction * 0.5f);
+
+        SpriteRenderer spriteRenderer = projectileObject.AddComponent<SpriteRenderer>();
+        spriteRenderer.sprite = PixelProjectile.CreateSprite();
+        spriteRenderer.sortingOrder = 1;
+
+        PixelProjectile projectile = projectileObject.AddComponent<PixelProjectile>();
+        projectile.Initialize(direction, projectileSpeed, Camera.main);
     }
 
     float GetHorizontalInput (){
