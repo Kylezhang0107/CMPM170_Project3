@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -70,13 +71,23 @@ public class PlayerController : MonoBehaviour
 
         direction.Normalize();
         GameObject projectileObject = new GameObject("Player Projectile");
+        projectileObject.tag = "Player Projectile";
         projectileObject.transform.position = transform.position + (Vector3)(direction * 0.5f);
 
         SpriteRenderer spriteRenderer = projectileObject.AddComponent<SpriteRenderer>();
         spriteRenderer.sprite = PixelProjectile.CreateSprite();
         spriteRenderer.sortingOrder = 1;
 
+        Rigidbody2D rb = projectileObject.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.gravityScale = 0f;
+
         PixelProjectile projectile = projectileObject.AddComponent<PixelProjectile>();
+
+        //add collider
+        BoxCollider2D collider = projectileObject.AddComponent<BoxCollider2D>();
+        collider.isTrigger = true;
+
         projectile.Initialize(direction, projectileSpeed, Camera.main);
     }
 
