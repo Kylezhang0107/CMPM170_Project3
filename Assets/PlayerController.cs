@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {   
-    public float angularSpeed = 100f;
+    public float angularSpeed = 150f;
     public float horizontalInput;
     public float angle = 270f; //start at bottom
 
@@ -71,7 +71,6 @@ public class PlayerController : MonoBehaviour
 
         direction.Normalize();
         GameObject projectileObject = new GameObject("Player Projectile");
-        projectileObject.tag = "Player Projectile";
         projectileObject.transform.position = transform.position + (Vector3)(direction * 0.5f);
 
         SpriteRenderer spriteRenderer = projectileObject.AddComponent<SpriteRenderer>();
