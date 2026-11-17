@@ -8,6 +8,7 @@ public class EnemyCollision : MonoBehaviour
         PixelProjectile projectile = other.GetComponent<PixelProjectile>();
         if (projectile != null)
         {
+            FindAnyObjectByType<ScoreManager>().AddScore(50);
             Destroy(projectile.gameObject);
             Destroy(gameObject);
         }
