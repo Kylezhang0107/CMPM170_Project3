@@ -300,8 +300,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner
   spawnInterval: 3
-  enemySprite: {fileID: -2413806693520163455, guid: 08e4660a20bb9794fb8cb39fcdd59adf, type: 3}
-  spriteColor: {r: 1, g: 0, b: 1, a: 1}
+  enemySprite: {fileID: 1805588113206198263, guid: bef6fed4a2c9e484fb09d5ee80b1d8d0, type: 3}
+  spriteColor: {r: 1, g: 0.9803922, b: 0.9803922, a: 1}
   enemiesPerWave: 4
   minEnemySize: 0.65
   maxEnemySize: 1.15
