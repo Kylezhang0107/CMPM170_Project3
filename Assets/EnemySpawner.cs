@@ -95,6 +95,7 @@ public class EnemySpawner : MonoBehaviour
             if (level < EnemiesPerLevel.Length)
             {
                 scoreManager.ShowStatus("Garden cleared!\nNext polygon...");
+                ClearObstacles();
                 yield return new WaitForSeconds(1.5f);
             }
         }
@@ -163,6 +164,16 @@ public class EnemySpawner : MonoBehaviour
         {
             arenaLine.SetPosition(i, PolygonPath.VertexAt(i));
         }
+    }
+
+    void ClearObstacles()
+    {
+        GameObject[] obstacles = GameObject.FindGameObjectsWithTag("Obstacle");
+        foreach (GameObject obs in obstacles)
+        {
+            Destroy(obs);
+        }
+        
     }
 }
 
