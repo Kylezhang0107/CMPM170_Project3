@@ -1,112 +1,127 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-
 public class PlayerController : MonoBehaviour
-{   
-    public float angularSpeed = 150f;
-    public float horizontalInput;
-    public float angle = 270f; //start at bottom
-
-    public float radius = 4f; //radius of circle players moves around
-
-    public Vector2 circleCenter; //centerpoint of circle player moves around
-
+{
+    [SerializeField] private PixelProjectile projectilePrefab;
+    [SerializeField] private float moveSpeed = 5.5f;
     [SerializeField] private float fireInterval = 0.25f;
-    [SerializeField] private float projectileSpeed = 10f;
+
+    private Rigidbody2D body;
+    private ScoreManager scoreManager;
+    private float trackDistance;
+    private float currentPerimeter;
     private float nextFireTime;
+    private float movementInput;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Start()
     {
-        CircleCollider2D collider = gameObject.AddComponent<CircleCollider2D>();
-        collider.isTrigger = true;
-    }   
+        body = GetComponent<Rigidbody2D>();
+        CircleCollider2D collider = GetComponent<CircleCollider2D>();
+        if (body == null || collider == null)
+        {
+            Debug.LogError("Player needs a Rigidbody2D and CircleCollider2D in the scene.", this);
+            enabled = false;
+            return;
+        }
 
-    // Update is called once per frame
-    void Update()
+        if (projectilePrefab == null)
+        {
+            Debug.LogError("PlayerController needs a projectile prefab assigned.", this);
+            enabled = false;
+            return;
+        }
+
+        scoreManager = FindAnyObjectByType<ScoreManager>();
+        currentPerimeter = PolygonPath.Perimeter;
+        trackDistance = currentPerimeter * 0.75f;
+        UpdatePose();
+    }
+
+    private void Update()
     {
-        float dt = Time.deltaTime; //shorten variable name for brevity
-        horizontalInput = GetHorizontalInput();
+        if (scoreManager != null && scoreManager.IsGameOver)
+        {
+            return;
+        }
 
-        //calculate angle
-        angle += angularSpeed * horizontalInput * dt;
-        angle %= 360f;
-        float angleRadians = angle * Mathf.Deg2Rad;
-
-        float x = circleCenter.x + Mathf.Cos(angleRadians) * radius;
-        float y = circleCenter.y + Mathf.Sin(angleRadians) * radius;
-
-        transform.position = new Vector2(x, y);
-
-        // Calculate direction toward circle center
-        Vector2 directionToCenter = circleCenter - (Vector2)transform.position;
-
-        // Calculate rotation angle
-        float rotationAngle = Mathf.Atan2(
-            directionToCenter.y,
-            directionToCenter.x
-        ) * Mathf.Rad2Deg;
-
-        // Rotate sprite so its top points toward the center
-        transform.rotation = Quaternion.Euler(0f, 0f, rotationAngle - 90f);
+        movementInput = GetHorizontalInput();
 
         if (Keyboard.current != null &&
             Keyboard.current.spaceKey.isPressed &&
             Time.time >= nextFireTime)
         {
-            FireProjectile(directionToCenter);
+            FireProjectile(PolygonPath.InwardAt(trackDistance));
             nextFireTime = Time.time + fireInterval;
         }
     }
 
-    void FireProjectile(Vector2 direction)
+    private void FixedUpdate()
     {
-        if (direction.sqrMagnitude <= Mathf.Epsilon)
+        if (scoreManager != null && scoreManager.IsGameOver)
         {
             return;
         }
 
-        direction.Normalize();
-        GameObject projectileObject = new GameObject("Player Projectile");
-        projectileObject.transform.position = transform.position + (Vector3)(direction * 0.5f);
+        if (currentPerimeter > 0f && !Mathf.Approximately(currentPerimeter, PolygonPath.Perimeter))
+        {
+            trackDistance = trackDistance / currentPerimeter * PolygonPath.Perimeter;
+            currentPerimeter = PolygonPath.Perimeter;
+        }
 
-        SpriteRenderer spriteRenderer = projectileObject.AddComponent<SpriteRenderer>();
-        spriteRenderer.sprite = PixelProjectile.CreateSprite();
-        spriteRenderer.sortingOrder = 1;
-
-        Rigidbody2D rb = projectileObject.AddComponent<Rigidbody2D>();
-        rb.bodyType = RigidbodyType2D.Kinematic;
-        rb.gravityScale = 0f;
-
-        PixelProjectile projectile = projectileObject.AddComponent<PixelProjectile>();
-
-        //add collider
-        BoxCollider2D collider = projectileObject.AddComponent<BoxCollider2D>();
-        collider.isTrigger = true;
-
-        projectile.Initialize(direction, projectileSpeed, Camera.main);
+        trackDistance = Mathf.Repeat(
+            trackDistance + movementInput * moveSpeed * Time.fixedDeltaTime,
+            PolygonPath.Perimeter);
+        UpdatePose();
     }
 
-    float GetHorizontalInput (){
-        float hInput = 0f;
-        if (Keyboard.current != null)
+    public void TakeDamage(int amount)
+    {
+        if (scoreManager != null)
         {
-            if (Keyboard.current.aKey.isPressed ||
-                Keyboard.current.leftArrowKey.isPressed)
-            {
-                hInput = -1f;
-            }
-
-            if (Keyboard.current.dKey.isPressed ||
-                Keyboard.current.rightArrowKey.isPressed)
-            {
-                hInput = 1f;
-            }
+            scoreManager.TakeDamage(amount);
         }
-        return hInput;
+    }
+
+    private void UpdatePose()
+    {
+        if (PolygonPath.Perimeter <= 0f)
+        {
+            return;
+        }
+
+        Vector2 position = PolygonPath.PositionAt(trackDistance);
+        Vector2 inward = PolygonPath.InwardAt(trackDistance);
+
+        if (body != null)
+        {
+            body.MovePosition(position);
+        }
+        else
+        {
+            transform.position = position;
+        }
+
+        float angle = Mathf.Atan2(inward.y, inward.x) * Mathf.Rad2Deg - 90f;
+        transform.rotation = Quaternion.Euler(0f, 0f, angle);
+    }
+
+    private void FireProjectile(Vector2 direction)
+    {
+        Vector3 spawnPosition = transform.position + (Vector3)(direction * 0.55f);
+        PixelProjectile projectile = Instantiate(projectilePrefab, spawnPosition, Quaternion.identity);
+        projectile.Initialize(direction);
+    }
+
+    private float GetHorizontalInput()
+    {
+        if (Keyboard.current == null)
+        {
+            return 0f;
+        }
+
+        bool left = Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed;
+        bool right = Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed;
+        return left == right ? 0f : right ? 1f : -1f;
     }
 }

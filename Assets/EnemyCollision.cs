@@ -3,21 +3,14 @@ using UnityEngine;
 
 public class EnemyCollision : MonoBehaviour
 {
-    void OnTriggerEnter2D(Collider2D other)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        PlayerController player = other.GetComponent<PlayerController>();
-        PixelProjectile projectile = other.GetComponent<PixelProjectile>();
-
-        if (projectile != null)
+        PixelProjectile projectile = collision.gameObject.GetComponent<PixelProjectile>();
+        EnemyMovement enemy = GetComponent<EnemyMovement>();
+        if (projectile != null && enemy != null)
         {
-            FindAnyObjectByType<ScoreManager>().AddScore(50);
+            enemy.TakeDamage();
             Destroy(projectile.gameObject);
-            Destroy(gameObject);
-        }
-        if(player != null)
-        {
-            FindAnyObjectByType<ScoreManager>().AddScore(-100);
-            Destroy(gameObject);
         }
     }
 }
