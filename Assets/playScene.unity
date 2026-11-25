@@ -149,6 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObstacleSpawner
   obstaclePrefab: {fileID: 5812690167371566351, guid: 87e4867a8918d8a46b0a865e131f2402, type: 3}
+  spawnInterval: 0.5
 --- !u!4 &10860632
 Transform:
   m_ObjectHideFlags: 0
